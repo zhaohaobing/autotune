@@ -1,5 +1,6 @@
 import unittest
 import os
+import shutil
 from autotune.tuner import RandomSearch
 from autotune.spec import Spec
 import json
@@ -18,7 +19,7 @@ class TestTune(unittest.TestCase):
 
     def tearDown(self):
         if os.path.isdir(test_dir):
-            os.rmdir(test_dir)
+            shutil.rmtree(test_dir)
 
     def test_no_gpu(self):
         tuner = RandomSearch(os.path.join(this_dir, 'executable.py'), self.config)
