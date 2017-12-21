@@ -20,15 +20,38 @@ class RandomSearch:
     def keys(self):
         return sorted(list(self.params.keys()))
 
-    def tune(self, n_jobs, out, wait_seconds=20):
+    def kill_jobs(self, jobs):
+        for p, fout, ferr in jobs:
+            if p.poll() is None:
+                os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+            if not fout.closed:
+                fout.close()
+            if not ferr.closed:
+                ferr.close()
+
+    def wait_until_jobs_queue_is_less_than(self, count):
+        while len(self.launched) >= count:
+            running = []
+            done = []
+            for p, fout, ferr in self.launched:
+                if p.poll() is not None:  # it's finished running
+                    done.append((p, fout, ferr))
+                else:
+                    running.append((p, fout, ferr))
+            self.kill_jobs(done)
+            if len(self.launched) == len(running):
+                time.sleep(2)
+            self.launched = running
+
+    def tune(self, n_jobs, out, max_jobs=8, wait_seconds=20):
         try:
             for i, (command, params) in enumerate(self.generate_jobs(n_jobs)):
-                print('Running job {}/{}\n{}'.format(i+1, n_jobs, command))
+                if len(self.launched) >= max_jobs:
+                    print('Waiting for jobs to finished. Currently running {} jobs with a limit of {} concurrent jobs'.format(len(self.launched), max_jobs))
+                    self.wait_until_jobs_queue_is_less_than(max_jobs-1)
 
-                if self.name is not None:
-                    name = params[self.name]
-                else:
-                    name = str(i)
+                print('Running job {}/{}\n{}'.format(i+1, n_jobs, command))
+                name = str(i) if self.name is None else params[self.name]
                 fout = open(os.path.join(out, '{}.out'.format(name)), 'w')
                 ferr = open(os.path.join(out, '{}.err'.format(name)), 'w')
                 p = subprocess.Popen(command, shell=True, stdout=fout, stderr=ferr, preexec_fn=os.setsid)
@@ -40,18 +63,9 @@ class RandomSearch:
                     }, f, indent=4)
                 self.launched.append((p, fout, ferr))
                 time.sleep(wait_seconds)
-            for p, fout, ferr in self.launched:
-                if p.poll() is None:
-                    time.sleep(1)
         except Exception as e:
-            print('killing {} jobs'.format(self.launched))
-            for p, fout, ferr in self.launched:
-                if p.poll() is None:  # it's still running
-                    os.killpg(os.getpgid(p.pid), signal.SIGTERM)
-                if not fout.closed:
-                    fout.close()
-                if not ferr.closed:
-                    ferr.close()
+            print('killing jobs: {}'.format([p.pid for p, fout, ferr in self.launched]))
+            self.kill_jobs(self.launched)
             raise e
 
     def generate_jobs(self, n, wait_seconds=20):
