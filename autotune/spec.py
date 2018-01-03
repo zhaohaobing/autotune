@@ -10,7 +10,7 @@ class Spec:
         with open(fname) as f:
             for k, v in json.load(f).items():
                 if isinstance(v, list):
-                    if isinstance(v[0], int):
+                    if all([isinstance(vv, int) for vv in v]):
                         config[k] = IntRange(*v)
                     else:
                         assert isinstance(v[0], float)
