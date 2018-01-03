@@ -6,7 +6,11 @@ Hyperparameter tuning on GPUs
 ## Installation
 
 ```bash
-pip install pip install git+git://github.com/vzhong/autotune.git
+pip install git+git://github.com/vzhong/autotune.git
+
+# Or get it straight from PyPI
+
+pip install autotune
 ```
 
 ## Usage
