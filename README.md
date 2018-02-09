@@ -43,5 +43,5 @@ where `myconf.json` looks something like:
 
 This will run 2 commands `myprog.bin --foo $FOO --bar $BAR` where `$FOO` is an integer sampled between `-1` and `1` and `$BAR` is a float sampled between `2.0` and `3.0`.
 You can pass in an optional parameter `name='nickname'`, which will add to the command `--nickname $HASH`, where `$HASH` is a hash of the specific parameters used for this command.
-You can also pass in an optional parameter `gpu=True`, which will queue jobs onto aavailable GPUs.
+You can also pass in an optional parameter `gpu=True`, which will queue jobs onto available GPUs.
 The command then becomes `CUDA_VISIBLE_DEVICES=$GPU myprog.bin --foo $FOO --bar $BAR --gpu 0`, where `$GPU` is a free GPU (e.g. no memory usage).
